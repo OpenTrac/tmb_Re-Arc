@@ -1,7 +1,9 @@
-# `tmb_decomp`
+# Twisted Metal: Black Re-Arc Project
 
-This repository contains a (WIP) matching decompilation of the 2001 Playstation 2
-game "Twisted Metal: Black".
+This repository is a Re-Arc (Reverse Engineering, Archaeology, and Reconstruction of Code)
+project for the 2001 Playstation 2 game `Twisted Metal: Black`. It uses matching decompilation
+techniques to ensure that the reconstructed source produces exactly identical machine code and
+behavior versus the original.
 
 ```diff
 - WARNING! -
@@ -21,6 +23,12 @@ Upon the project's completion, if a source port to other platforms is desired, a
 unified, non-profit effort to create an open-source engine replacement should be
 started to avoid any community fragmentation.
 ```
+
+## Contributing
+
+If you'd like to contribute to the project, please join us in the `#twisted-metal-black`
+channel on the [PS1/PS2 Re-Arc Discord server](https://discord.gg/VwCPdfbxgm).
+Communication is key.
 
 ## Requirements
 
