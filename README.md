@@ -24,11 +24,18 @@ unified, non-profit effort to create an open-source engine replacement should be
 started to avoid any community fragmentation.
 ```
 
+## AI Policy
+
+Before using agentic LLMs or AI on this codebase, please see [AI_POLICY.md](AI_POLICY.md)
+for our repository's standards and requirements.
+
 ## Contributing
 
 If you'd like to contribute to the project, please join us in the `#twisted-metal-black`
 channel on the [PS1/PS2 Re-Arc Discord server](https://discord.gg/VwCPdfbxgm).
 Communication is key.
+
+To learn how to contribute to this decompilation project, please read [CONTRIBUTING](CONTRIBUTING.md).
 
 ## Requirements
 
@@ -83,9 +90,10 @@ To build the repository, you will need a digital copy of the Playstation 2 game
 6. Whenever you modify the splat config, you should perform a `uv run configure.py distclean`
    before regenerating the config with `uv run configure.py generate`.
 
-## Contributing
+## Known Issues / Compiler Quirks
 
-To learn how to contribute to this decompilation project, please read [CONTRIBUTING](CONTRIBUTING.md).
+For a list of known compiler issues / quirks to reference during the decompilation
+process, check `QUIRKS.md`.
 
 ## Disclaimers / Legality
 
@@ -97,3 +105,23 @@ make no claim of copyright on any Sony proprietary APIs or structures.
 
 This project exists primarily for educational and research purposes. The authors of this
 project have no desire to use this project for monetary gain.
+
+## Acknowledgements
+
+This project is critically reliant on tools from dedicated members of the console
+reversing community. Without them, this work would be impossible.
+Special thanks go to the teams and individuals behind:
+
+- `decomp.wiki`
+- `decomp.me`
+- `decomp.dev`
+- `splat`
+- `spimdisasm`
+- `objdiff` and `asm-differ`
+- `m2c`
+- All of the helpful and skilled decompers in various decomp communities and
+  Discords; PS1/PS2, GC/Wii, N64, and decomp.me servers.
+
+Also, SingleTrac/Incognito, for developing Twisted Metal, Jet Moto, and all of the other
+great games they put out during the 90s and 2000s. This project's goal is to preserve
+that legacy for future generations and allow others to experience what we did.
