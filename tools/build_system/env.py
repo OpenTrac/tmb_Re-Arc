@@ -107,6 +107,8 @@ class EnvironmentFiles:
     build_script: Path
     # Path to the original executable to disassemble/compare against.
     disk: Path
+    # Expected SHA-1 hash of the original executable.
+    disk_sha1: str
     # Path to a "ROM" of the original executable which is created by this script.
     # The "ROM" only contains functions and data, without ELF metadata, and is
     # what we actually compare to.
@@ -116,9 +118,13 @@ class EnvironmentFiles:
     final_elf: Path
     # Path to the final ROM file. This is the result used for comparisons.
     final_rom: Path
+    # Path to `objdiff` CLI binary.
+    objdiff_cli: Path
 
-    # Path to the `permuter_config.toml` created by the build.
-    permuter_config: Path
+    # Path to the `objdiff.json` config created by the build.
+    objdiff_config: Path
+    # Path to the `report.json` progress report created by the build.
+    progress_report: Path
 
     @staticmethod
     def for_version(
@@ -138,10 +144,13 @@ class EnvironmentFiles:
             ldmap=directories.build / f"{basename}.map",
             build_script=directories.root / "build.ninja",
             disk=directories.disks / basename,
+            disk_sha1="3ff17f4897552e355d0bb8c3abfa5125fe3ff2ef",
             disk_rom=directories.disks / f"{basename}.rom",
             final_elf=directories.build / f"{basename}.elf",
             final_rom=directories.build / f"{basename}.rom",
-            permuter_config=directories.root / "permuter_settings.toml",
+            objdiff_cli=directories.tools / "objdiff/objdiff-cli-linux-x86_64",
+            objdiff_config=directories.root / "objdiff.json",
+            progress_report=directories.config / "report.json",
         )
 
 
@@ -169,6 +178,9 @@ class EnvironmentToolchain:
     # Value of $gp register in the binary.
     gp_value: int
 
+    # Macros predefined by the C compiler. The C preprocessor is run with `-undef`
+    # when generating context, so these have to be defined manually.
+    cpp_predefines: list[str]
     # Base flags for C compilation, ignoring includes.
     c_flags: list[str]
     # Base flags for C++ compilation, ignoring includes.
@@ -197,8 +209,22 @@ class EnvironmentToolchain:
             linker_cmd=f"{_CROSS}ld",
             objcopy_cmd=f"{_CROSS}objcopy",
             strip_cmd=f"{_CROSS}strip",
-            c_preprocessor_cmd=f"{_CROSS}gcc",
+            c_preprocessor_cmd=f"{_CROSS}cpp",
             gp_value=0x004FEE70,
+            cpp_predefines=[
+                "-D__GNUC__=2",
+                "-D__GNUC_MINOR__=9",
+                "-D__mips__",
+                "-D__mips=3",
+                "-D__mips64",
+                "-D__mips_eabi",
+                "-D__mips_single_float",
+                "-D__MIPSEL__",
+                "-D__R5900__",
+                "-D__LONG_MAX__=9223372036854775807L",
+                "-D__SIZE_TYPE__=unsigned int",
+                "-D__PTRDIFF_TYPE__=int",
+            ],
             c_flags=["-O2", "-G8", "-fno-exceptions"],
             cxx_flags=["-O2", "-G8", "-x c++", "-fno-exceptions"],
             as_flags=[
@@ -256,21 +282,24 @@ class Environment:
         """
         return self.directories.build.is_dir()
 
-    def generate_c_preprocessor_cmd(self, m2ctx: bool = False) -> str:
+    def generate_ctx_preprocessor_args(self) -> list[str]:
         """
-        Generate the full C preprocessor invocation for this environment, not including
-        input/output parameters.
+        Generate the C preprocessor invocation used to create context files,
+        not including input/output parameters.
         """
-        flags = [
-            "-E",  # Preprocess only.
-            "-P",  # Do not generate #line directives.
-            "-dD",  # Preserve macro definitions in output.
+        return [
+            self.toolchain.c_preprocessor_cmd,
             *[f"-I{inc}" for inc in self.directories.includes],
-            *[f"-isystem {inc}" for inc in self.directories.system_includes],
+            *[
+                arg
+                for inc in self.directories.system_includes
+                for arg in ("-isystem", str(inc))
+            ],
+            "-P",
+            "-undef",
+            *self.toolchain.cpp_predefines,
+            "-DM2CTX",
         ]
-        if m2ctx:
-            flags.append("-DM2CTX")
-        return f"{self.toolchain.c_preprocessor_cmd} {' '.join(flags)}"
 
     def generate_c_compiler_cmd(self) -> str:
         """

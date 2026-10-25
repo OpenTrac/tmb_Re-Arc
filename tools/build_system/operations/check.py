@@ -6,6 +6,7 @@ import argparse
 import logging
 import hashlib
 import typing
+import sys
 from pathlib import Path
 
 import colorama
@@ -56,7 +57,7 @@ def _check_cli(env: Environment, args):
             typing.cast(Path, args.output).write_text(sha1sum(args.binary))
     else:
         print(f"{args.binary}: {colorama.Fore.RED}NONMATCHING{colorama.Fore.RESET}")
-        exit(1)
+        sys.exit(1)
 
 
 def check(env: Environment, binary: Path) -> bool:

@@ -1,1 +1,1 @@
-gcc-mips-linux-gnu g++-mips-linux-gnu binutils-mips-linux-gnu clang-format python3 python3-pip python3-virtualenv nano curl wget unzip git make patch file ninja-build libc6-i386
+gcc-mips-linux-gnu g++-mips-linux-gnu binutils-mips-linux-gnu clang-format python3 nano curl wget unzip git make patch file ninja-build libc6-i386

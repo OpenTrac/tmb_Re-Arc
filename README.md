@@ -50,21 +50,20 @@ sudo apt install -y $(cat ./tools/requirements-debian.txt)
 
 ### Python Packages
 
-This repository requires several Python dependencies with a Python virtual environment.
+This repository manages its Python version and dependencies with
+[`uv`](https://docs.astral.sh/uv/). Follow the
+[installation instructions](https://docs.astral.sh/uv/getting-started/installation/)
+to install it.
+
 A script in the repository, `tools/setup_dev.sh`, will automatically perform first-time
-setup for all Python dependencies and set up your Python virtual environment.
+setup for all Python dependencies and install the `pre-commit` hooks.
 
 ```sh
 ./tools/setup_dev.sh
 ```
 
-**NOTE**: You will need to manually activate your Python virtual environment every time you
-open a new terminal in the repository. Once `setup_dev.sh` has been run once, you can
-activate your virtual environment with the following command:
-
-```sh
-source .venv/bin/activate
-```
+There is no need to activate a virtual environment. Run Python scripts in the repository
+through `uv run` instead, e.g. `uv run configure.py generate`.
 
 ## Building
 
@@ -76,13 +75,13 @@ To build the repository, you will need a digital copy of the Playstation 2 game
   - In the future, this repository will be able to perform this extraction for you.
     Currently, however, you will need to somehow extract this yourself.
 3. Place the `SCUS_971.01` file into the `disks/` directory of the repository.
-4. Run `./configure.py generate` at the root of the repository.
+4. Run `uv run configure.py generate` at the root of the repository.
   - This will split the binary into parts and generate a `build.ninja` file in the
     root of the repository.
 5. Run `ninja` at the root of the repository.
   - If building is successful, the resulting binary will appear at `build/SCUS_971.01`.
-6. Whenever you modify the splat config, you should perform a `./configure.py distclean`
-   before regenerating the config with `./configure.py generate`.
+6. Whenever you modify the splat config, you should perform a `uv run configure.py distclean`
+   before regenerating the config with `uv run configure.py generate`.
 
 ## Contributing
 

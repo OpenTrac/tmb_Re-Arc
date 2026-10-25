@@ -58,7 +58,8 @@ scratch for TMB:
 3. Under `Compiler`, select `EE GCC 2.9 build 991111` as the compiler with `Custom` preset.
 4. Under `Target assembly`, copy-paste the contents of the function you are matching
    from its corresponding file in `asm/nonmatchings/`.
-5. Under `Context`, add all typedefs from `include/common.h`.
+5. Under `Context`, paste the context for the source file containing the function.
+   Run `uv run configure.py ctx src/tmb/<file>.cpp` to generate it at `ctx.c`.
 6. Click `Create scratch`.
 7. On the new page, in the `Options` tab of the left window, enter
    `-O2 -G8 -x c++ -fno-exceptions` for the compiler flags.
@@ -121,10 +122,10 @@ To decompile this as C++, we need to change the subsegment type to `cpp`:
 ```
 
 Now that we've changed the `splat` config, we need to rerun `splat` and regenerate
-our Ninja build script. This can be done with `./configure.py generate` in the root
+our Ninja build script. This can be done with `uv run configure.py generate` in the root
 of the repository.
 
-After running `./configure.py generate`, we should have a new file in the `src/`
+After running `uv run configure.py generate`, we should have a new file in the `src/`
 directory, `src/tmb/font.cpp`:
 
 ```cpp
@@ -252,31 +253,46 @@ Our mistake makes the new binary non-matching, and the `ninja` build will fail:
 ```
 [4/5] CHECK       /workspace/build/SCUS_971.01
 FAILED: /workspace/build/build.sha1
-./configure.py check --binary /workspace/build/SCUS_971.01 --output /workspace/build/build.sha1
+uv run configure.py check --binary /workspace/build/SCUS_971.01 --output /workspace/build/build.sha1
 /workspace/build/SCUS_971.01: NONMATCHING
 ninja: build stopped: subcommand failed.
 ```
 
 How do we see what went wrong?
 
-The repository includes a tool called `asm-differ` that can help with this. Assuming
-we're in our Python virtual environment, we can run
-`./tools/asm-differ/diff.py fontSetCharWidth__Fii`
-in the terminal to get a nice view of the two binaries:
+We can use [`objdiff`](https://github.com/encounter/objdiff) to find out.
+`uv run configure.py generate` creates an `objdiff.json` configuration in the root of the
+repository, which lets `objdiff` compare each object built from our source code against
+an object assembled from the original assembly.
+
+There are two ways to use it:
+
+- Download the `objdiff` GUI from its [releases page](https://github.com/encounter/objdiff/releases)
+  and open the root of the repository as a project. Select the `tmb/font` unit, then the
+  `fontSetCharWidth__Fii` function.
+- Use the `objdiff` CLI included in the repository, which opens an interactive diff in the terminal:
+  `./tools/objdiff/objdiff-cli-linux-x86_64 diff -u tmb/font fontSetCharWidth__Fii`
+
+Either way, we get a side-by-side view of the two functions:
 
 ```
-TARGET                                                   CURRENT (5)
-c5380:    lui     v0,0x50                                c5380:    lui     v0,0x50
-c5384:    sll     a0,a0,0x5                              c5384:    sll     a0,a0,0x5
-c5388:    addiu   v0,v0,0x4540                           c5388:    addiu   v0,v0,0x4540
-c538c:    addu    a0,a0,v0                               c538c:    addu    a0,a0,v0
-c5390:    jr      ra                                     c5390:    jr      ra
-c5394:    sh      a1,4(a0)                        i      c5394:    sh      a1,2(a0)
+TARGET                                    CURRENT
+lui     v0, %hi(fontInfo)                 lui     v0, %hi(fontInfo)
+sll     a0, a0, 5                         sll     a0, a0, 5
+addiu   v0, v0, %lo(fontInfo)             addiu   v0, v0, %lo(fontInfo)
+addu    a0, a0, v0                        addu    a0, a0, v0
+jr      ra                                jr      ra
+sh      a1, 0x4(a0)                       sh      a1, 0x2(a0)
 ```
 
 We can see the `sh` ("Store Half Word") instruction at the end of the function is
-storing to `field1_0x2` instead of `field2_0x4`. (The diff view in the terminal has
-colored text to better illustrate the difference.)
+storing to `field1_0x2` instead of `field2_0x4`. (`objdiff` highlights the difference
+in color.)
+
+**NOTE**: `objdiff` currently reports false mismatches for functions which load float
+constants from `.lit4` (e.g. `lwc1 $f0, %gp_rel(D_004FA64C)($gp)`). The original assembly
+and the compiled object use different relocation types for these loads, which `objdiff`
+treats as a difference even when the binary matches. When in doubt, trust the `CHECK` step.
 
 Once we fix our code up, we get a matching build again:
 
@@ -301,23 +317,10 @@ When writing your code, you'll need a way to compare the generated
 assembly to the original binary. There are two methods:
 
 - Use [`decomp.me`](#decompme).
-- Use `asm-differ`, as discussed in [Mismatches](#mismatches).
+- Use `objdiff`, as discussed in [Mismatches](#mismatches).
 
-`asm-differ` is capable of watching the source code and updating
-in real-time as you modify it. Here are some useful parameters
-for that:
-
-- `-w -m`: Makes `asm-differ` watch the source code and auto-run `ninja`
-  after any updates to it.
-- `-U [NUM]`: Filters 100% matching instructions out of the output with
-  `NUM` lines of context.
-  - Useful for large functions where you've partially matched.
-- `-U [NUM]`: Filters matching instructions (ignoring regalloc)
-  out of the output with `NUM` lines of context.
-  - Useful for large functions where you've partially matched.
-- `-3`: Opens a 3-way diff which saves the output of the last change
-  to your code.
-  - Great for understanding specific code changes.
+`objdiff` watches the source code and automatically rebuilds and
+updates the diff in real-time as you modify it.
 
 #### Matching Patterns
 
@@ -712,7 +715,7 @@ function->variable references.
    Replace `tmb/mathf` with your TU. (It should have the same name as the
    corresponding `cpp` segment.)
 7. Re-generate the build system with
-   `./configure.py distclean && ./configure.py generate`.
+   `uv run configure.py distclean && uv run configure.py generate`.
 
 Global variables may be referenced in multiple TUs, which will cause some
 ambiguity. Some global variables may not even be used in the location
@@ -751,7 +754,7 @@ character in front of it:
       - [0x3FB840, .sdata, tmb/font]
 ```
 
-Regenerate the build system with `./configure.py distclean && ./configure.py generate`.
+Regenerate the build system with `uv run configure.py distclean && uv run configure.py generate`.
 When you compile with `ninja`, the data from your C++ file should now be linked into
 the final binary. If you get `NONMATCHING` after this, you've likely declared
 variables in the wrong order in your C++ file, or your variables have the incorrect

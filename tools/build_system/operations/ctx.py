@@ -5,16 +5,23 @@ The code for stripping function definitions was originally developed by
 Simon Lindholm for `decomp-permuter`, licensed under MIT.
 """
 
+from __future__ import annotations
+
 import argparse
 import logging
 import re
 import subprocess
-import tempfile
 from pathlib import Path
 
 from build_system.env import Environment
 
 LOG = logging.getLogger(__name__)
+
+_DEFAULT_OUTPUT = "ctx.c"
+
+# Matches the start of a function definition up to its opening `{`. Parameter lists may span
+# several lines. Lines starting with `#` are macro definitions, which may contain braces.
+_FUNCTION_START = re.compile(r"^[^#\n]*?\s\**(\w+)\([^;{}#]*\)\s*\{", re.MULTILINE)
 
 
 def add_subparser(subparsers):
@@ -24,29 +31,32 @@ def add_subparser(subparsers):
     """
     parser: argparse.ArgumentParser = subparsers.add_parser(
         "ctx",
-        help="Generates a context file for use with decomp.me.",
-        description="Generates a context file for use with decomp.me.",
+        help="Generates a context file for a C file, for use with m2c and decomp.me.",
+        description=(
+            "Generates a context file for a C file, for use with m2c and decomp.me. "
+            "The context contains every type, declaration, and macro visible to the file."
+        ),
     )
     parser.add_argument(
         "c_file",
-        help="Source file to generate context for.",
         type=Path,
+        help="C file to generate the context for.",
     )
     parser.add_argument(
         "--keep-funcs",
+        nargs="+",
+        default=[],
         help=(
-            "A (unmangled) function name whose implementation (if one exist) should be left in the output. "
-            "All other function implementations will be stripped from the output."
-            "Multiple functions can be listed after the flag."
+            "Functions whose definitions should be kept in the context. "
+            "All other function definitions are reduced to declarations."
         ),
-        nargs="*",
-        required=False,
     )
     parser.add_argument(
         "--output",
-        help="Path to output the resulting context file. Defaults to `ctx.h`.",
+        "-o",
         type=Path,
-        default=Path("ctx.h"),
+        default=None,
+        help=f"Path to write the context to. Defaults to `{_DEFAULT_OUTPUT}` in the repository root.",
     )
     parser.set_defaults(func=_ctx_cli)
 
@@ -55,118 +65,110 @@ def _ctx_cli(env: Environment, args):
     """
     Handle the "ctx" command of the CLI.
     """
-    generate_ctx(env, args.c_file, args.keep_funcs, args.output)
+    output: Path = args.output or env.directories.root / _DEFAULT_OUTPUT
+    output.write_text(generate_ctx(env, args.c_file, args.keep_funcs))
+    LOG.info("Wrote context for `%s` to `%s`.", args.c_file, output)
 
 
-def _clean_up_macros(output: str, stock_macros: str) -> str:
+def generate_ctx(env: Environment, c_file: Path, keep_funcs: list[str]) -> str:
     """
-    Clean up the output of the C preprocessor by removing macros pre-defined
-    by the compiler.
-    """
+    Generate the context for the given C file.
 
-    def parse_define_name(line: str) -> str:
-        return line.split()[1].split("(")[0]
-
-    defines = {}
-    source_lines = []
-    for line in output.splitlines(keepends=True):
-        if line.startswith("#define"):
-            sym = parse_define_name(line)
-            defines[sym] = line
-        elif line.startswith("#undef"):
-            sym = parse_define_name(line)
-            if sym in defines:
-                del defines[sym]
-        else:
-            if line.strip().startswith("__asm__ volatile"):
-                continue
-            source_lines.append(line)
-
-    for line in stock_macros.strip().splitlines():
-        sym = parse_define_name(line)
-        if sym in defines:
-            del defines[sym]
-
-    return "".join(defines.values()) + "".join(source_lines)
-
-
-def _find_bracket_end(output: str, start: int) -> int:
-    """
-    Given an opening bracket `{` in a C-like source file, find the index
-    of the corresponding closing bracket `}`.
-    """
-
-    level = 1
-    assert output[start] == "{"
-    i = start + 1
-    while i < len(output):
-        if output[i] == "{":
-            level += 1
-        elif output[i] == "}":
-            level -= 1
-            if level == 0:
-                break
-
-        i += 1
-
-    assert level == 0, "unbalanced brackets {}"
-    return i
-
-
-def _strip_function_defs(output: str, keep_funcs: list[str]):
-    """
-    Strip function definitions from the context.
-    """
-    result = ""
-    remain = output
-    func_re = re.compile(r"^[^#\n]*\s+\**(\w+)\(.*\)\s*?{", re.M)
-
-    if keep_funcs is None:
-        keep_funcs = []
-
-    while True:
-        fn = re.search(func_re, remain)
-        if fn is None:
-            result += remain
-            remain = ""
-            break
-
-        name = fn.group(1)
-        bracket_end = _find_bracket_end(remain, fn.end() - 1)
-        if name in keep_funcs:
-            result += "\n\n" + remain[: bracket_end + 1] + "\n\n"
-        else:
-            result += remain[: fn.end() - 1].rstrip() + ";"
-
-        remain = remain[bracket_end + 1 :]
-
-    return result
-
-
-def generate_ctx(
-    env: Environment, c_file: Path, keep_funcs: list[str], result_file: Path
-):
-    """
-    Generate a context file for use with decomp.me.
+    The definitions of all functions except `keep_funcs` are reduced to declarations.
     """
     if not c_file.is_file():
-        raise FileNotFoundError(f"Missing source file: `{c_file}`")
+        raise FileNotFoundError(f"Missing C file: `{c_file}`")
 
-    LOG.info("Checking stock macros...")
-    with tempfile.NamedTemporaryFile(suffix=".h", delete=True) as tmp:
-        stock_macros = subprocess.check_output(
-            f"{env.toolchain.c_preprocessor_cmd} -E -P -dM {tmp.name}",
-            shell=True,
-            encoding="utf-8",
-        )
+    args = env.generate_ctx_preprocessor_args()
+    source = _preprocess(env, [*args, "-dD", str(c_file.resolve())])
+    predefined = _preprocess(env, [*args, "-dM", "-"])
 
-    LOG.info("Running C preprocessor on `%s`...", str(c_file))
-    command = f"{env.generate_c_preprocessor_cmd(m2ctx=True)} {c_file}"
-    result_text = subprocess.check_output(command, encoding="utf-8", shell=True)
+    predefined_macros = {
+        name for line in predefined.splitlines() if (name := _macro_name(line))
+    }
+    # `INCLUDE_ASM(...);` expands to an empty `;` line, which only adds noise.
+    lines = [
+        line
+        for line in source.splitlines()
+        if _macro_name(line) not in predefined_macros and line.strip() != ";"
+    ]
 
-    LOG.info("Prettifying output...")
-    result_text = _clean_up_macros(result_text, stock_macros)
-    result_text = _strip_function_defs(result_text, keep_funcs)
+    return _strip_function_definitions("\n".join(lines) + "\n", set(keep_funcs))
 
-    result_file.write_text(result_text, encoding="utf-8")
-    LOG.info("Wrote final context to `%s`.", str(result_file))
+
+def _preprocess(env: Environment, args: list[str]) -> str:
+    """
+    Run the C preprocessor and return its output. Its standard input is empty.
+    """
+    result = subprocess.run(
+        args,
+        cwd=env.directories.root,
+        input="",
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"C preprocessor failed:\n{result.stderr}")
+    return result.stdout
+
+
+def _macro_name(line: str) -> str | None:
+    """
+    Get the name of the macro defined by a `#define` line, if it is one.
+    """
+    match = re.match(r"#define\s+(\w+)", line)
+    return match.group(1) if match else None
+
+
+def _strip_function_definitions(source: str, keep_funcs: set[str]) -> str:
+    """
+    Replace the body of every function definition not in `keep_funcs` with `;`.
+    """
+    result = ""
+    remain = source
+    while (function := _FUNCTION_START.search(remain)) is not None:
+        body_start = function.end() - 1
+        body_end = _find_body_end(remain, body_start)
+
+        if function.group(1) in keep_funcs:
+            result += remain[: body_end + 1]
+        else:
+            result += remain[:body_start].rstrip() + ";"
+        remain = remain[body_end + 1 :]
+
+    return result + remain
+
+
+def _find_body_end(source: str, start: int) -> int:
+    """
+    Given the opening `{` of a function body, find the index of its closing `}`.
+    """
+    level = 0
+    i = start
+    while i < len(source):
+        char = source[i]
+        if char in "\"'":
+            i = _skip_literal(source, i)
+            continue
+
+        if char == "{":
+            level += 1
+        elif char == "}":
+            level -= 1
+            if level == 0:
+                return i
+        i += 1
+
+    raise ValueError(f"Unbalanced braces in function body at offset {start}")
+
+
+def _skip_literal(source: str, start: int) -> int:
+    """
+    Given the opening quote of a string or character literal, find the index after its end.
+    """
+    quote = source[start]
+    i = start + 1
+    while i < len(source) and source[i] != quote:
+        i += 2 if source[i] == "\\" else 1
+    return i + 1

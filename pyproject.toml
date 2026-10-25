@@ -1,0 +1,18 @@
+[project]
+name = "tmb-decomp"
+version = "0.1.0"
+description = "Build system for tmb-decomp"
+readme = "README.md"
+authors = []
+requires-python = ">=3.10"
+dependencies = [
+    "colorama",
+    "pre-commit",
+    "ruff",
+    "spimdisasm",
+    "splat64[mips]>=0.50.0,<1.0.0",
+    "m2c @ git+https://github.com/matt-kempster/m2c@c632946b8cfbe8fce442b522dba92dfa72f1f317",
+]
+
+[tool.uv]
+package = false

@@ -5,6 +5,7 @@ Main CLI function/module of the build system.
 import argparse
 import logging
 import logging.config
+import sys
 from pathlib import Path
 
 from .operations import (
@@ -15,7 +16,6 @@ from .operations import (
     check,
     ctx,
     patchelf,
-    permute,
 )
 from .env import Environment, Version
 from .log import get_logger_config
@@ -49,7 +49,6 @@ generate.add_subparser(subparsers)
 check.add_subparser(subparsers)
 ctx.add_subparser(subparsers)
 patchelf.add_subparser(subparsers)
-permute.add_subparser(subparsers)
 
 
 def cli(root: Path):
@@ -65,3 +64,4 @@ def cli(root: Path):
     except Exception as e:
         LOG.critical("Exception occurred!", exc_info=True)
         LOG.critical("Exiting due to error: %s", e)
+        sys.exit(1)

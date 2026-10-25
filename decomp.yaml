@@ -11,10 +11,3 @@ versions:
     elf: "build/SCUS_971.01.elf"
     asm: "asm"
     nonmatchings: "asm/nonmatchings"
-tools:
-  mapfile_parser:
-    progress_report:
-      output: config/US/report.json
-      prefixes_to_trim: ["build/asm", "build/src"]
-      check_asm_paths: True
-      report_data: False

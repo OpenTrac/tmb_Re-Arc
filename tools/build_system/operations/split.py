@@ -9,6 +9,7 @@ import subprocess
 import splat.scripts.split as splat_split
 
 from build_system.env import Environment
+from .check import sha1sum
 from .distclean import distclean
 
 LOG = logging.getLogger(__name__)
@@ -48,6 +49,13 @@ def _prepare_rom(env: Environment):
     if not env.files.disk.is_file():
         raise FileNotFoundError(
             f"Missing required original binary file: `{env.files.disk}`"
+        )
+
+    disk_sha1 = sha1sum(env.files.disk)
+    if disk_sha1 != env.files.disk_sha1:
+        raise ValueError(
+            f"Original binary file `{env.files.disk}` has SHA-1 `{disk_sha1}`, "
+            f"expected `{env.files.disk_sha1}`"
         )
 
     if not env.files.disk_rom.is_file():

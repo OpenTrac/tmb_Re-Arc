@@ -11,8 +11,10 @@ __pycache__/
 SCUS*.map
 nonmatchings/
 .ninja_log
+.ninja_deps
+.ninja_lock
 disks/
 objdiff.json
-permuter_settings.toml
+compile_commands.json
 *.rom
-ctx*
+/ctx*

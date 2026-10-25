@@ -1,6 +1,6 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
-exclude: ^(tools/((ee\-gcc2\.9)|(objdiff)|(asm_differ)|(build_system/ninja_syntax.py)))|(include/((gcc)|(sdk))|(config/US/report.json))
+exclude: ^(tools/((ee\-gcc2\.9)|(objdiff)|(build_system/ninja_syntax.py)))|(include/((gcc)|(sdk))|(config/US/report.json))
 
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks

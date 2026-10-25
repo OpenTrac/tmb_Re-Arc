@@ -35,6 +35,7 @@ options:
   named_regs_for_c_funcs: False
   use_gp_rel_macro_nonmatching: False
   disassemble_all: True
+  make_full_disasm_for_code: True
 
 segments:
   - name: main
