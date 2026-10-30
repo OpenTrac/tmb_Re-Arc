@@ -225,7 +225,7 @@ class EnvironmentToolchain:
                 "-D__SIZE_TYPE__=unsigned int",
                 "-D__PTRDIFF_TYPE__=int",
             ],
-            c_flags=["-O2", "-G8", "-fno-exceptions"],
+            c_flags=["-O2", "-G0", "-fno-exceptions"],
             cxx_flags=["-O2", "-G8", "-x c++", "-fno-exceptions"],
             as_flags=[
                 "-EL",
