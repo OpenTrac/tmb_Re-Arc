@@ -40950,51 +40950,6 @@
   "version": 2,
   "categories": [
     {
-      "id": "data",
-      "name": "data",
-      "measures": {
-        "fuzzy_match_percent": 100.0,
-        "matched_code_percent": 100.0,
-        "total_data": "5276928",
-        "matched_functions_percent": 100.0,
-        "complete_code_percent": 100.0,
-        "total_units": 12
-      }
-    },
-    {
-      "id": "newlib",
-      "name": "newlib",
-      "measures": {
-        "total_code": "41272",
-        "matched_data_percent": 100.0,
-        "total_functions": 117,
-        "complete_data_percent": 100.0,
-        "total_units": 69
-      }
-    },
-    {
-      "id": "gcc",
-      "name": "gcc",
-      "measures": {
-        "total_code": "29704",
-        "matched_data_percent": 100.0,
-        "total_functions": 193,
-        "complete_data_percent": 100.0,
-        "total_units": 13
-      }
-    },
-    {
-      "id": "sdk",
-      "name": "sdk",
-      "measures": {
-        "total_code": "87576",
-        "matched_data_percent": 100.0,
-        "total_functions": 571,
-        "complete_data_percent": 100.0,
-        "total_units": 29
-      }
-    },
-    {
       "id": "tmb",
       "name": "tmb",
       "measures": {
@@ -41009,6 +40964,51 @@
         "matched_functions": 100,
         "matched_functions_percent": 3.664346,
         "total_units": 294
+      }
+    },
+    {
+      "id": "gcc",
+      "name": "gcc",
+      "measures": {
+        "total_code": "29704",
+        "matched_data_percent": 100.0,
+        "total_functions": 193,
+        "complete_data_percent": 100.0,
+        "total_units": 13
+      }
+    },
+    {
+      "id": "newlib",
+      "name": "newlib",
+      "measures": {
+        "total_code": "41272",
+        "matched_data_percent": 100.0,
+        "total_functions": 117,
+        "complete_data_percent": 100.0,
+        "total_units": 69
+      }
+    },
+    {
+      "id": "sdk",
+      "name": "sdk",
+      "measures": {
+        "total_code": "87576",
+        "matched_data_percent": 100.0,
+        "total_functions": 571,
+        "complete_data_percent": 100.0,
+        "total_units": 29
+      }
+    },
+    {
+      "id": "data",
+      "name": "data",
+      "measures": {
+        "fuzzy_match_percent": 100.0,
+        "matched_code_percent": 100.0,
+        "total_data": "5276928",
+        "matched_functions_percent": 100.0,
+        "complete_code_percent": 100.0,
+        "total_units": 12
       }
     }
   ]

@@ -15,7 +15,6 @@ from .operations import (
     split,
     check,
     ctx,
-    patchelf,
 )
 from .env import Environment, Version
 from .log import get_logger_config
@@ -48,7 +47,6 @@ split.add_subparser(subparsers)
 generate.add_subparser(subparsers)
 check.add_subparser(subparsers)
 ctx.add_subparser(subparsers)
-patchelf.add_subparser(subparsers)
 
 
 def cli(root: Path):

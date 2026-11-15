@@ -77,7 +77,7 @@ def _generate_ninja_script(env: Environment, linker_entries: list[LinkerEntry]):
         ninja.rule(
             name="as",
             description="ASSEMBLE    $in",
-            command=f"{env.generate_assembler_cmd()} $in -o $out && uv run configure.py patchelf $out",
+            command=f"{env.generate_assembler_cmd()} $asflags $in -o $out",
         )
         ninja.rule(
             name="ld",
@@ -132,7 +132,7 @@ def _generate_ninja_script(env: Environment, linker_entries: list[LinkerEntry]):
 
             if _is_assemblable(segment):
                 # Incomplete TU with no decompiled equivalent.
-                _add_build_rule(ninja, entry.object_path, "as", entry.src_paths)
+                _add_as_build_rule(ninja, env, entry.object_path, entry.src_paths)
             else:
                 # In-progress or fully decompiled TU which can be compared with the original.
                 if _is_c_code(segment):
@@ -168,7 +168,7 @@ def _generate_ninja_script(env: Environment, linker_entries: list[LinkerEntry]):
                 )
                 local_out_path = segment.out_path().relative_to(env.directories.root)
                 target_path = (local_build_dir / local_asm_out_path).with_suffix(".s.o")
-                _add_build_rule(ninja, target_path, "as", [local_asm_out_path])
+                _add_as_build_rule(ninja, env, target_path, [local_asm_out_path])
 
                 unit["target_path"] = str(target_path)
                 unit["base_path"] = str(entry.object_path)
@@ -263,6 +263,26 @@ def _add_build_rule(
     Add a build with the given output and inputs to the Ninja script.
     """
     ninja.build(outputs=[str(output)], rule=rule, inputs=[str(p) for p in inputs])
+
+
+def _add_as_build_rule(
+    ninja: ninja_syntax.Writer, env: Environment, output: Path, inputs: list[Path]
+):
+    """
+    Add an assembler build with the given output and inputs to the Ninja script,
+    including any extra assembler flags for the inputs.
+    """
+    asflags: list[str] = []
+    for p in inputs:
+        local_path = p.relative_to(env.directories.root) if p.is_absolute() else p
+        asflags.extend(env.toolchain.as_file_flags.get(local_path, []))
+
+    ninja.build(
+        outputs=[str(output)],
+        rule="as",
+        inputs=[str(p) for p in inputs],
+        variables={"asflags": " ".join(asflags)} if asflags else None,
+    )
 
 
 def _is_assemblable(segment: splat_segtypes.segment.Segment) -> bool:

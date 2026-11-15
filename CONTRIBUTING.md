@@ -557,8 +557,8 @@ These usually manifest as a linker error similar to the following:
 ```
 [2/5] LINK        /tmb-decomp/config/US/SCUS_971.01.ld
 FAILED: /tmb-decomp/build/SCUS_971.01.elf /tmb-decomp/build/SCUS_971.01.map
-mips-linux-gnu-ld -EL -T /tmb-decomp/config/US/undefined_syms_auto.txt -T /tmb-decomp/config/US/undefined_funcs.txt -Map /tmb-decomp/build/SCUS_971.01.map -nostdlib -T /tmb-decomp/config/US/SCUS_971.01.ld -o /tmb-decomp/build/SCUS_971.01.elf
-mips-linux-gnu-ld: small-data section exceeds 64KB; lower small-data size limit (see option -G)
+ld -EL -T /tmb-decomp/config/US/undefined_syms_auto.txt -T /tmb-decomp/config/US/undefined_funcs.txt -Map /tmb-decomp/build/SCUS_971.01.map -nostdlib -T /tmb-decomp/config/US/SCUS_971.01.ld -o /tmb-decomp/build/SCUS_971.01.elf
+ld: small-data section exceeds 64KB; lower small-data size limit (see option -G)
 build/asm/tmb/ai.s.o: in function `aiInit__7Vehicle':
 (.text+0x158): relocation truncated to fit: R_MIPS_GPREL16 against `D_004F6E80'
 build/asm/tmb/ai.s.o: in function `aiInitDynamics__7Vehicle':
@@ -596,7 +596,7 @@ this issue by using the `PAD_ZEROES()` macro provided in
 ```
 [2/5] LINK        /tmb-decomp/config/US/SCUS_971.01.ld
 FAILED: /tmb-decomp/build/SCUS_971.01.elf /tmb-decomp/build/SCUS_971.01.map
-mips-linux-gnu-ld -EL -T /tmb-decomp/config/US/undefined_syms_auto.txt -T /tmb-decomp/config/US/undefined_funcs.txt -Map /tmb-decomp/build/SCUS_971.01.map -nostdlib -T /tmb-decomp/config/US/SCUS_971.01.ld -o /tmb-decomp/build/SCUS_971.01.elf
+ld -EL -T /tmb-decomp/config/US/undefined_syms_auto.txt -T /tmb-decomp/config/US/undefined_funcs.txt -Map /tmb-decomp/build/SCUS_971.01.map -nostdlib -T /tmb-decomp/config/US/SCUS_971.01.ld -o /tmb-decomp/build/SCUS_971.01.elf
 `.sdata' referenced in section `.text' of build/src/tmb/mathf.cpp.o: defined in discarded section `.sdata' of build/src/tmb/mathf.cpp.o
 `.sdata' referenced in section `.text' of build/src/tmb/mathf.cpp.o: defined in discarded section `.sdata' of build/src/tmb/mathf.cpp.o
 `.sdata' referenced in section `.text' of build/src/tmb/mathf.cpp.o: defined in discarded section `.sdata' of build/src/tmb/mathf.cpp.o

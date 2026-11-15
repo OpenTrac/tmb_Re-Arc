@@ -187,6 +187,9 @@ class EnvironmentToolchain:
     cxx_flags: list[str]
     # Base flags for assembler invocation, ignoring includes.
     as_flags: list[str]
+    # Extra assembler flags for specific source files, keyed by path
+    # relative to the root.
+    as_file_flags: dict[Path, list[str]]
     # Base flags for linker invocation.
     ld_flags: list[str]
     # Base flags for creating a ROM using `objcopy`.
@@ -201,12 +204,13 @@ class EnvironmentToolchain:
         binary version and the compiler directory in the repository.
         """
         compiler = str(directories.tools / "ee-gcc2.9/bin/ee-gcc")
+        binutils = directories.tools / "binutils-decompals"
 
         return EnvironmentToolchain(
             c_compiler_cmd=compiler,
             cxx_compiler_cmd=compiler,
-            assembler_cmd=f"{_CROSS}as",
-            linker_cmd=f"{_CROSS}ld",
+            assembler_cmd=str(binutils / "mips-ps2-decompals-as"),
+            linker_cmd=str(binutils / "mips-ps2-decompals-ld"),
             objcopy_cmd=f"{_CROSS}objcopy",
             strip_cmd=f"{_CROSS}strip",
             c_preprocessor_cmd=f"{_CROSS}cpp",
@@ -233,7 +237,19 @@ class EnvironmentToolchain:
                 "-G0",
                 "-no-pad-sections",
                 "-mabi=eabi",
+                "--align-section=.text:8",
+                "--align-section=.data:4",
+                "--align-section=.bss:16",
+                "--align-section=.sbss:4",
+                "--align-section=.sdata:4",
+                "--align-section=.rodata:8",
             ],
+            as_file_flags={
+                Path(f"asm/newlib/libc/machine/r5900/{name}.s"): [
+                    "--align-section=.text:4"
+                ]
+                for name in ("memchr", "memmove", "strchr", "strcmp", "strlen")
+            },
             ld_flags=[
                 "-EL",
                 f"-T {directories.config / 'undefined_syms_auto.txt'}",
