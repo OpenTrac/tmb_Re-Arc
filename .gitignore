@@ -18,3 +18,9 @@ objdiff.json
 compile_commands.json
 *.rom
 /ctx*
+.mcp.json
+.env
+CLAUDE.local.md
+AGENTS.local.md
+.claude
+.agents
