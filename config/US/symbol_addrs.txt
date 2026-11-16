@@ -5523,6 +5523,7 @@ controlVal                                                   = 0x004F0BD0; // si
 speedVal                                                     = 0x004F0C10; // size:0x40
 armorVal                                                     = 0x004F0C50; // size:0x40
 specialVal                                                   = 0x004F0C90; // size:0x40
+jtbl_004F1E80                                                = 0x004F1E80; // align:0x10
 _vt$8resetcom                                                = 0x004F33A0; // size:0x20
 mask_bits                                                    = 0x004F3820; // size:0x22
 c_border                                                     = 0x004F3848; // size:0x4C
