@@ -127,7 +127,7 @@ segments:
       - [0xA3B98, asm, tmb/vehicle]
       - [0xB08E0, asm, tmb/watow]
       - [0xB0D60, asm, tmb/weap]
-      - [0xBACA0, asm, tmb/989snd]
+      - [0xBACA0, c, tmb/989snd]
       - [0xBCEC8, asm, tmb/aa]
       - [0xBD530, asm, tmb/animChan]
       - [0xBFF98, asm, tmb/bound]
@@ -303,6 +303,8 @@ segments:
       # .data segment
       # ------------------------------------------------
       - [0x134D00, data]
+      - [0x386FC0, .data, tmb/989snd]
+      - [0x38A690, data]
       # ------------------------------------------------
       # .rodata segment
       # TODO: Many segments in here contain the string `Q210PedestrianStrategy`,
@@ -364,7 +366,7 @@ segments:
       - [0x3F0CD0, rodata, tmb/uimemcard]
       - [0x3F1900, rodata, tmb/vehicle]
       - [0x3F1AA0, rodata, tmb/weap]
-      - [0x3F1D70, rodata, tmb/989snd]
+      - [0x3F1D70, .rodata, tmb/989snd]
       - [0x3F1E80, rodata, tmb/animChan]
       - [0x3F1EB8, rodata, tmb/CsColor]
       - [0x3F1EF0, rodata, tmb/dbs]
@@ -501,7 +503,9 @@ segments:
       # .bss segment
       # ------------------------------------------------
       - {type: bss, vram: 0x004FC000, name: bss1}
+      - {type: .bss, vram: 0x004FE970, name: tmb/989snd}
+      - {type: bss, vram: 0x004FE9A0, name: bss2}
       - {type: .bss, vram: 0x00504480, name: tmb/font}
-      - {type: bss, vram: 0x00510100, name: bss2}
+      - {type: bss, vram: 0x00510100, name: bss3}
 
   - [0x3FBD00] # end of file
